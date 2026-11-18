@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>todo&amp;log</title>
+<meta name="application-name" content="todo&amp;log">
+<meta name="apple-mobile-web-app-title" content="todo&amp;log">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #1a1a1a; --fg: #f2f2f2; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --bg: #1a1a1a; --fg: #f2f2f2; color-scheme: dark; }
+  * { -webkit-tap-highlight-color: transparent; }
+  #cal, .nav { -webkit-user-select: none; user-select: none; }
+  .nav:focus, .nav:focus-visible { outline: none; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body { touch-action: pan-y; margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; padding-top: 24px; box-sizing: border-box; }
+  .wrap { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 0 12px; box-sizing: border-box; }
+  #date { flex: 1; cursor: pointer; -webkit-user-select: none; user-select: none; font-size: clamp(1rem, 4.5vw, 1.75rem); font-weight: 600; }
+  .nav { flex: none; width: 44px; height: 44px; border: none; background: transparent; color: var(--fg); font-size: 1.5rem; line-height: 1; cursor: pointer; opacity: .7; }
+  .nav:hover, .nav:active { opacity: 1; }
+  #cal { margin-top: 8px; width: 100%; max-width: 360px; padding: 0 12px; box-sizing: border-box; }
+  #cal table { width: 100%; border-collapse: collapse; }
+  #cal th, #cal td { padding: 4px 0; width: 14.28%; font-size: 0.95rem; }
+  #cal th { font-weight: 500; }
+  #cal th.sun, #cal th.sat { opacity: 1; }
+  #cal td[data-d] { cursor: pointer; }
+  #cal .sun { color: #ff0000; }
+  #cal .sat { color: #0000ff; }
+  #cal td.out, #cal td.out.sun, #cal td.out.sat { color: rgba(128,128,128,.6); }
+  #cal td span { display: inline-block; width: 32px; height: 32px; line-height: 32px; border-radius: 50%; }
+  #cal td.today { font-weight: 400; }
+  #cal td.sel span { background: #d4d4d4; color: #111; }
+  #cal td.today span { background: var(--fg); color: var(--bg); }
+  .tab { display: flex; flex-direction: column; align-items: center; width: 100%; padding-bottom: 96px; }
+  .tab[hidden] { display: none; }
+  html, body { overflow-x: hidden; }
+  #logdate { flex: 1; font-size: clamp(1rem, 4.5vw, 1.75rem); font-weight: 600; }
+  nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--bg); border-top: 1px solid rgba(128,128,128,.3); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  nav button { flex: 1; padding: 14px 0; border: none; background: transparent; color: var(--fg); font-size: 1rem; opacity: .45; cursor: pointer; }
+  nav button.active { opacity: 1; font-weight: 600; }
+  nav button svg { width: 24px; height: 24px; display: block; margin: 0 auto; }
+  .pills { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  .pill, .hpill { display: flex; align-items: center; justify-content: flex-start; text-align: left; gap: 8px; flex: none; width: 100%; padding: 10px 8px 10px 16px; border: none; border-radius: 999px; background: rgba(128,128,128,.2); color: var(--fg); font-size: 0.9rem; cursor: default; }
+  #logs { width: 100%; max-width: 360px; padding: 16px 12px 0; box-sizing: border-box; }
+  #tab-log { padding-bottom: 340px; }
+  #logsheet { position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); margin: 0 auto; width: 100%; max-width: 480px; height: 220px; box-sizing: border-box; background: var(--bg); border: 1px solid rgba(128,128,128,.3); border-bottom: none; border-radius: 16px 16px 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,.15); z-index: 10; }
+  #lgrab { height: 28px; display: flex; align-items: center; justify-content: center; cursor: ns-resize; touch-action: none; -webkit-user-select: none; user-select: none; }
+  #lgrab i { width: 40px; height: 4px; border-radius: 2px; background: rgba(128,128,128,.5); }
+  .hrow { display: flex; align-items: center; gap: 10px; }
+  .hnum { flex: none; width: 2ch; text-align: right; font-size: 0.9rem; opacity: .6; font-variant-numeric: tabular-nums; }
+  .hpill { position: relative; border: 1.5px solid rgba(128,128,128,.2); background-clip: padding-box; overflow: hidden; }
+  .hpill.future { background: transparent; }
+  .mseg i.on { background: rgba(128,128,128,.2); }
+  .mseg i.sel { background: rgba(128,128,128,.55); }
+  #logs { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  #logsel { padding: 12px 16px; text-align: center; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  #logsheet { overflow-y: auto; }
+  #logcats { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 0 16px 16px; }
+  #logcats[hidden] { display: none; }
+  .lcat { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1.5px solid rgba(128,128,128,.2); border-radius: 999px; background: rgba(128,128,128,.2); color: var(--fg); font-size: 0.9rem; cursor: pointer; }
+  .lcat.on { background: rgba(128,128,128,.55); font-weight: 600; }
+  .tick { position: absolute; bottom: 0; width: 1px; height: 4px; transform: translateX(-50%); background: rgba(128,128,128,.7); pointer-events: none; }
+  .mseg { position: absolute; inset: 0; display: flex; }
+  .mseg i { flex: 1 1 0; min-width: 0; background: transparent; }
+  .hrow .hpill { flex: 1; min-width: 0; width: auto; min-height: 42px; box-sizing: border-box; }
+  .pill.on { background: rgba(128,128,128,.55); font-weight: 600; }
+  .pill { padding-top: 5px; padding-bottom: 5px; }
+  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex: none; }
+  .plus { margin-left: auto; width: 28px; height: 28px; line-height: 27px; text-align: center; font-size: 1.3rem; font-weight: 400; border-radius: 50%; background: #fff; color: #1a1a1a; flex: none; }
+  #tedit, #tmove { width: 100%; margin-top: 8px; padding: 12px; border: none; border-radius: 10px; background: rgba(128,128,128,.2); color: var(--fg); font-size: 1rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+  #tedit { margin-top: 16px; }
+  #tdel { width: 100%; margin-top: 8px; padding: 12px; border: none; border-radius: 10px; background: rgba(229,72,77,.12); color: #e5484d; font-size: 1rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+  #tbox { width: 100%; margin-top: 8px; padding: 12px; border: none; border-radius: 10px; background: rgba(128,128,128,.2); color: var(--fg); font-size: 1rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+  .brow { display: flex; align-items: center; gap: 10px; padding: 14px 8px; border-bottom: 1px solid rgba(128,128,128,.25); }
+  .brow .bt { flex: 1; min-width: 0; word-break: break-word; }
+  .brow small { display: block; margin-top: 2px; opacity: .6; white-space: pre-wrap; }
+  .brow .bx { border: none; background: transparent; color: var(--fg); opacity: .5; font-size: 1.25rem; cursor: pointer; }
+  #ov3 { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 30; }
+  #ov3.open { opacity: 1; pointer-events: auto; }
+  #dlg { width: calc(100% - 48px); max-width: 320px; box-sizing: border-box; padding: 20px; border-radius: 16px; background: var(--bg); text-align: center; }
+  #dlg p { margin: 0; font-size: 1rem; font-weight: 600; }
+  #dlg small { display: block; margin-top: 6px; opacity: .6; font-size: 0.85rem; }
+  .dbtn { display: flex; gap: 8px; margin-top: 18px; }
+  .dbtn button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+  #dno { background: rgba(128,128,128,.2); color: var(--fg); }
+  #dyes { background: #e5484d; color: #fff; }
+  #ov5 { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 40; }
+  #ov5.open { opacity: 1; pointer-events: auto; }
+  #dlg5 { width: calc(100% - 48px); max-width: 320px; box-sizing: border-box; padding: 20px; border-radius: 16px; background: var(--bg); text-align: center; }
+  #dlg5 p { margin: 0; font-size: 1rem; font-weight: 600; }
+  #dlg5 small { display: block; margin-top: 6px; opacity: .6; font-size: 0.85rem; }
+  #sbtn { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+  #sbtn button { padding: 12px; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; font-family: inherit; cursor: pointer; background: rgba(128,128,128,.2); color: var(--fg); }
+  #sbtn button.pri { background: var(--fg); color: var(--bg); }
+  #sbtn button.dng { background: #e5484d; color: #fff; }
+  #tab-set .wrap > div { flex: 1; font-size: clamp(1rem, 4.5vw, 1.75rem); font-weight: 600; }
+  #setlist, .sv { width: 100%; max-width: 360px; padding: 16px 12px 0; box-sizing: border-box; text-align: left; }
+  .srow { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 16px 8px; border: none; border-bottom: 1px solid rgba(128,128,128,.25); background: transparent; color: var(--fg); font-size: 1rem; font-family: inherit; text-align: left; cursor: pointer; }
+  .srow em { font-style: normal; opacity: .4; font-size: 1.3rem; }
+  #setback { border: none; background: transparent; color: var(--fg); font-size: 2rem; line-height: 1; padding: 0 12px 0 0; cursor: pointer; }
+  #setback[hidden] { display: none; }
+  #themeseg { display: flex; gap: 8px; }
+  #themeseg button { flex: 1; padding: 12px 0; border: 1px solid rgba(128,128,128,.4); border-radius: 10px; background: transparent; color: var(--fg); font-size: 0.95rem; font-family: inherit; cursor: pointer; }
+  #themeseg button.on { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 600; }
+  #syncbtn { width: 100%; margin-top: 14px; padding: 12px; border: none; border-radius: 10px; background: rgba(128,128,128,.2); color: var(--fg); font-size: 1rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+  #syncbtn:disabled { opacity: .5; cursor: default; }
+  .sin { margin-bottom: 4px; }
+  #sv-sync .frow { margin-top: 14px; }
+  #syncmsg { display: block; margin-top: 8px; font-size: 0.85rem; opacity: .6; text-align: center; }
+  #ov6 { position: fixed; inset: 0; background: rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; }
+  #ov6.open { opacity: 1; pointer-events: auto; }
+  #sheet6 { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; width: 100%; max-width: 480px; background: var(--bg); border-radius: 16px 16px 0 0; padding: 10px 16px calc(24px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; transform: translateY(100%); transition: transform .3s ease; }
+  #ov6.open #sheet6 { transform: translateY(0); }
+  #sheet6 button { width: 100%; margin-top: 8px; padding: 12px; border: none; border-radius: 10px; background: rgba(128,128,128,.2); color: var(--fg); font-size: 1rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+  #sheet6 #bt-today { margin-top: 16px; }
+  #sheet6 #bt-del { background: rgba(229,72,77,.12); color: #e5484d; }
+  .brow { cursor: pointer; }
+  #sheet.boxmode .frow:has(#swtime), #sheet.boxmode .frow:has(#swrep), #sheet.boxmode #ftime, #sheet.boxmode #frep { display: none; }
+  #ov4 { position: fixed; inset: 0; background: rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; }
+  #ov4.open { opacity: 1; pointer-events: auto; }
+  #sheet4 { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; width: 100%; max-width: 480px; background: var(--bg); border-radius: 16px 16px 0 0; padding: 10px 16px calc(24px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; transform: translateY(100%); transition: transform .3s ease; }
+  #ov4.open #sheet4 { transform: translateY(0); }
+  #mvgo { width: 100%; margin-top: 16px; padding: 12px; border: none; border-radius: 10px; background: var(--fg); color: var(--bg); font-size: 1rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+  #mvcal .rh { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+  #mvcal .rh button { width: 40px; height: 40px; border: none; background: transparent; color: var(--fg); font-size: 1.4rem; cursor: pointer; }
+  #mvcal table { width: 100%; border-collapse: collapse; text-align: center; }
+  #mvcal th, #mvcal td { padding: 3px 0; width: 14.28%; font-size: 0.95rem; }
+  #mvcal th { font-weight: 500; }
+  #mvcal td[data-n] { cursor: pointer; }
+  #mvcal td span { display: inline-block; width: 34px; height: 34px; line-height: 34px; border-radius: 50%; }
+  #mvcal td.sel span { background: #d4d4d4; color: #111; }
+  #mvcal td.today span { background: var(--fg); color: var(--bg); }
+  #mvcal .sun { color: #ff0000; }
+  #mvcal .sat { color: #0000ff; }
+  #ov2 { position: fixed; inset: 0; background: rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; }
+  #ov2.open { opacity: 1; pointer-events: auto; }
+  #sheet2 { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; width: 100%; max-width: 480px; min-height: 260px; max-height: 85%; background: var(--bg); border-radius: 16px 16px 0 0; padding: 10px 16px calc(24px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; transform: translateY(100%); transition: transform .3s ease; }
+  #ov2.open #sheet2 { transform: translateY(0); }
+  .clist li { cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  html, body, .clist, .clist li { overflow-anchor: none; }
+  html.dragging, html.dragging body { overflow: hidden; overscroll-behavior: none; }
+  .clist li.drag { position: relative; z-index: 5; will-change: transform; touch-action: none; background: var(--bg); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+  #overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; }
+  #overlay.open { opacity: 1; pointer-events: auto; }
+  #sheet { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; width: 100%; max-width: 480px; min-height: 260px; max-height: 85%; background: var(--bg); border-radius: 16px 16px 0 0; padding: 10px 16px calc(24px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; transform: translateY(100%); transition: transform .3s ease; }
+  #overlay.open #sheet { transform: translateY(0); }
+  .flabel { display: block; text-align: left; font-size: 0.9rem; opacity: .7; margin: 8px 0; }
+  #ttitle, #tmemo, .trow input, .sin { width: 100%; box-sizing: border-box; padding: 12px; font-size: 16px; font-family: inherit; border: 1px solid rgba(128,128,128,.4); border-radius: 10px; background: transparent; color: var(--fg); }
+  #tmemo { resize: none; display: block; }
+  .trow { display: flex; align-items: center; gap: 8px; }
+  .trow input { flex: 1; min-width: 0; text-align: center; -webkit-user-drag: none; }
+  .tw { position: relative; flex: 1; min-width: 0; }
+  .tw input { position: relative; z-index: 1; color: transparent; caret-color: var(--fg); }
+  .tv { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 12px; border: 1px solid transparent; box-sizing: border-box; font-size: 16px; font-family: inherit; pointer-events: none; }
+  .tv .g { color: rgba(128,128,128,.6); }
+  .tv .k { color: var(--fg); }
+  .terr { color: #e5484d; font-size: 0.85rem; text-align: left; margin-top: 6px; }
+  .frow { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+  .frow span { font-size: 0.9rem; opacity: .7; }
+  .sw { position: relative; width: 44px; height: 26px; flex: none; }
+  .sw input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
+  .sw i { position: absolute; inset: 0; border-radius: 13px; background: rgba(128,128,128,.35); transition: background .2s; }
+  .sw i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .2s; }
+  .sw input:checked + i { background: #000; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .sw input:checked + i { background: #f2f2f2; }
+    :root:not([data-theme="light"]) .sw input:checked + i::after { background: #1a1a1a; }
+  }
+  .sw input:checked + i::after { transform: translateX(18px); }
+  #rendbtn { width: 100%; box-sizing: border-box; padding: 12px; text-align: center; font-size: 16px; border: 1px solid rgba(128,128,128,.4); border-radius: 10px; cursor: pointer; -webkit-user-select: none; user-select: none; }
+  #rendbtn.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  #rcal { margin-top: 8px; }
+  #rcal .rh { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+  #rcal .rh button { width: 36px; height: 36px; border: none; background: transparent; color: var(--fg); font-size: 1.3rem; cursor: pointer; }
+  #rcal table { width: 100%; border-collapse: collapse; text-align: center; }
+  #rcal th, #rcal td { padding: 2px 0; width: 14.28%; font-size: 0.9rem; }
+  #rcal th { font-weight: 500; }
+  #rcal td[data-v] { cursor: pointer; }
+  #rcal td span { display: inline-block; width: 30px; height: 30px; line-height: 30px; border-radius: 50%; }
+  #rcal td.sel span { background: var(--fg); color: var(--bg); }
+  #rcal td.dis { opacity: .3; }
+  #rcal .sun { color: #ff0000; }
+  #rcal .sat { color: #0000ff; }
+  #rcal .rclr { display: block; margin: 6px auto 0; padding: 6px 14px; border: none; border-radius: 999px; background: transparent; color: var(--fg); opacity: .6; font-size: 0.85rem; font-family: inherit; cursor: pointer; }
+  #rcal .rclr.on { background: var(--fg); color: var(--bg); opacity: 1; }
+  .days { display: flex; gap: 6px; justify-content: space-between; }
+  .days button { flex: 1 1 0; min-width: 0; max-width: 44px; aspect-ratio: 1 / 1; padding: 0; border: 1px solid rgba(128,128,128,.4); border-radius: 50%; background: transparent; color: var(--fg); font-size: 0.9rem; font-family: inherit; cursor: pointer; }
+  .days button.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  #rend { width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 16px; font-family: inherit; border: 1px solid rgba(128,128,128,.4); border-radius: 10px; background: transparent; color: var(--fg); }
+  #sheet { overflow-y: auto; }
+  .fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s ease; }
+  .fold.open { grid-template-rows: 1fr; }
+  .fold > div { overflow: hidden; min-height: 0; }
+  .fold > div > :first-child { margin-top: 8px; }
+  #tsave { width: 100%; margin-top: 16px; padding: 12px; border: none; border-radius: 10px; background: var(--fg); color: var(--bg); font-size: 1rem; font-weight: 600; cursor: pointer; }
+  .grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(128,128,128,.5); margin: 0 auto 14px; cursor: pointer; }
+  .shead { display: flex; align-items: center; justify-content: space-between; }
+  #sheetTitle { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 600; }
+  #sheetClose { border: none; background: transparent; color: var(--fg); font-size: 1.5rem; opacity: .6; cursor: pointer; width: 40px; height: 40px; }
+  #todo { width: 100%; max-width: 360px; padding: 16px 12px 0; box-sizing: border-box; text-align: left; }
+  .add { display: flex; gap: 8px; }
+  .add input { flex: 1; min-width: 0; padding: 10px; font-size: 16px; border: 1px solid rgba(128,128,128,.4); border-radius: 8px; background: transparent; color: var(--fg); }
+  .add button { padding: 0 14px; border: 1px solid rgba(128,128,128,.4); border-radius: 8px; background: transparent; color: var(--fg); font-size: 1rem; cursor: pointer; }
+  .clist { list-style: none; margin: 0; padding: 0; }
+  .clist li { display: flex; align-items: flex-start; gap: 10px; padding: 10px 8px 10px 16px; margin: 0; box-sizing: border-box; }
+  .clist li span { flex: 1; word-break: break-word; line-height: 22px; }
+  .clist li span small { line-height: 1.4; }
+  .clist li.done > span { opacity: .5; }
+  .clist li.done .tt { text-decoration: line-through; }
+  .clist input[type=checkbox] { -webkit-appearance: none; appearance: none; position: relative; flex: none; width: 22px; height: 22px; margin: 0; border: 2px solid var(--c, rgba(128,128,128,.6)); border-radius: 50%; background: transparent; cursor: pointer; box-sizing: border-box; }
+  .clist input[type=checkbox]:checked { background: var(--c, var(--fg)); border-color: var(--c, var(--fg)); }
+
+  .clist .del { border: none; background: transparent; color: var(--fg); opacity: .5; font-size: 1.25rem; cursor: pointer; }
+
+</style>
+</head>
+<body>
+<section id="tab-todo" class="tab">
+<div class="wrap">
+  <button class="nav" id="prev" aria-label="이전 날">‹</button>
+  <div id="date"></div>
+  <button class="nav" id="next" aria-label="다음 날">›</button>
+</div>
+<div id="cal"></div>
+<div id="todo">
+  <div class="pills">
+    <div class="cat" data-cat="일정"><button class="pill"><i class="dot" style="background:#BA664C"></i>일정<span class="plus" role="button" aria-label="일정 추가">+</span></button><ul class="clist"></ul></div>
+    <div class="cat" data-cat="교통"><button class="pill"><i class="dot" style="background:#262D82"></i>교통<span class="plus" role="button" aria-label="교통 추가">+</span></button><ul class="clist"></ul></div>
+    <div class="cat" data-cat="강의"><button class="pill"><i class="dot" style="background:#D99A5B"></i>강의<span class="plus" role="button" aria-label="강의 추가">+</span></button><ul class="clist"></ul></div>
+    <div class="cat" data-cat="집중"><button class="pill"><i class="dot" style="background:#DBB114"></i>집중<span class="plus" role="button" aria-label="집중 추가">+</span></button><ul class="clist"></ul></div>
+    <div class="cat" data-cat="할일"><button class="pill"><i class="dot" style="background:#7C33B0"></i>할일<span class="plus" role="button" aria-label="할일 추가">+</span></button><ul class="clist"></ul></div>
+  </div>
+</div>
+</section>
+<section id="tab-log" class="tab" hidden>
+  <div class="wrap"><div id="logdate"></div></div>
+  <div id="logs" class="pills"></div>
+  <div id="logsheet"><div id="lgrab"><i></i></div></div>
+</section>
+<section id="tab-set" class="tab" hidden>
+  <div class="wrap"><button type="button" id="setback" aria-label="뒤로" hidden>‹</button><div id="settitle">설정</div></div>
+  <div id="setlist">
+    <button type="button" class="srow" data-sv="sv-vault"><span>보관함</span><em>›</em></button>
+    <button type="button" class="srow" data-sv="sv-sync"><span>동기화</span><em>›</em></button>
+  </div>
+  <div class="sv" id="sv-vault" hidden></div>
+  <div class="sv" id="sv-sync" hidden>
+    <label class="flabel" for="syncurl">Apps Script 웹 앱 URL</label>
+    <input id="syncurl" class="sin" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="frow"><span>자동 동기화</span><label class="sw"><input type="checkbox" id="swsync" aria-label="자동 동기화 켜기"><i></i></label></div>
+    <button type="button" id="syncbtn">지금 동기화</button>
+    <span id="syncmsg"></span>
+  </div>
+</section>
+<nav>
+  <button class="active" data-tab="tab-todo" aria-label="투두"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12l3 3 5-6"/></svg></button>
+  <button data-tab="tab-log" aria-label="로그"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
+  <button data-tab="tab-set" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+</nav>
+<div id="overlay">
+  <div id="sheet">
+    <label for="ttitle" class="flabel">투두 제목</label>
+    <input id="ttitle" type="text" autocomplete="off">
+    <div class="frow"><span>투두 메모</span><label class="sw"><input type="checkbox" id="swmemo" aria-label="투두 메모 켜기"><i></i></label></div>
+    <div class="fold" id="fmemo"><div><textarea id="tmemo" rows="3"></textarea></div></div>
+    <div class="frow"><span>투두 시간</span><label class="sw"><input type="checkbox" id="swtime" aria-label="투두 시간 켜기"><i></i></label></div>
+    <div class="fold" id="ftime"><div>
+    <div class="trow"><div class="tw"><div class="tv" id="vstart"></div><input id="tstart" type="text" inputmode="numeric" maxlength="6" value="00:00" aria-label="시작 시간"></div><span>-</span><div class="tw"><div class="tv" id="vend"></div><input id="tend" type="text" inputmode="numeric" maxlength="6" value="00:00" aria-label="종료 시간"></div></div>
+    <div id="terr" class="terr"></div>
+    </div></div>
+    <div class="frow"><span>투두 반복</span><label class="sw"><input type="checkbox" id="swrep" aria-label="투두 반복 켜기"><i></i></label></div>
+    <div class="fold" id="frep"><div>
+    <div class="days" id="days"><button type="button" data-w="0">일</button><button type="button" data-w="1">월</button><button type="button" data-w="2">화</button><button type="button" data-w="3">수</button><button type="button" data-w="4">목</button><button type="button" data-w="5">금</button><button type="button" data-w="6">토</button></div>
+    <label for="rend" class="flabel">반복 종료일 (비우면 계속 반복)</label>
+    <input id="rend" type="hidden">
+    <div id="rendbtn" role="button" tabindex="0">종료일 없음</div>
+    <div id="rcal" hidden></div>
+    <div id="rerr" class="terr"></div>
+    </div></div>
+    <button id="tsave">저장</button>
+  </div>
+</div>
+<div id="ov2"><div id="sheet2"><div class="grab" id="grab2"></div><button id="tedit">투두 수정</button><button id="tmove">날짜 변경</button><button id="tdel">투두 삭제</button><button id="tbox">보관함으로 이동</button></div></div>
+<div id="ov5"><div id="dlg5"><p id="stitle"></p><div id="sbtn"></div></div></div>
+<div id="ov6"><div id="sheet6"><div class="grab" id="grab6"></div><button id="bt-today">오늘로 옮기기</button><button id="bt-date">날짜 옮기기</button><button id="bt-edit">보관함 수정하기</button><button id="bt-del">보관함 삭제하기</button></div></div>
+<div id="ov4"><div id="sheet4"><div class="grab" id="grab4"></div><div id="mvcal"></div><button id="mvgo">이동</button></div></div>
+<div id="ov3"><div id="dlg"><p>정말 삭제하시겠습니까?</p><small id="dmsg"></small><div class="dbtn"><button id="dno">취소</button><button id="dyes">삭제</button></div></div></div>
+<script>
+  var d = new Date();
+  function render() {
+    renderCal();
+    renderTodo();
+    paintLog();
+    if (logSelSync) logSelSync();
+    var p = function (x) { return (x < 10 ? '0' : '') + x; };
+    var s = d.getFullYear() + '/' + p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' (' + ['일', '월', '화', '수', '목', '금', '토'][d.getDay()] + ')';
+    document.getElementById('date').textContent = s;
+    document.getElementById('logdate').textContent = s;
+  }
+  function renderCal() {
+    var y = d.getFullYear(), m = d.getMonth(), today = new Date();
+    var first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+    var h = '<table><tr>';
+    ['일', '월', '화', '수', '목', '금', '토'].forEach(function (w, i) {
+      h += '<th' + (i === 0 ? ' class="sun"' : i === 6 ? ' class="sat"' : '') + '>' + w + '</th>';
+    });
+    h += '</tr><tr>';
+    for (var q = 0; q < 42; q++) {
+      var n = q - first + 1, wd = q % 7, cls = [], dt = new Date(y, m, n), inM = n >= 1 && n <= days;
+      if (q > 0 && wd === 0) h += '</tr><tr>';
+      if (wd === 0) cls.push('sun');
+      if (wd === 6) cls.push('sat');
+      if (!inM) cls.push('out');
+      if (dn(dt) === dn(today)) cls.push('today');
+      if (inM && n === d.getDate()) cls.push('sel');
+      h += '<td class="' + cls.join(' ') + '" data-t="' + dn(dt) + '"><span>' + dt.getDate() + '</span></td>';
+    }
+    h += '</tr></table>';
+    document.getElementById('cal').innerHTML = h;
+  }
+  document.getElementById('cal').addEventListener('click', function (e) {
+    var c = e.target.closest && e.target.closest('td');
+    var n = c && c.getAttribute('data-t');
+    if (n) { n = parseInt(n, 10); d = new Date(Math.floor(n / 10000), Math.floor(n / 100) % 100 - 1, n % 100); render(); }
+  });
+  function move(n) { d = new Date(d.getFullYear(), d.getMonth() + n, 1); render(); }
+  document.getElementById('date').addEventListener('click', function () { d = new Date(); render(); });
+  document.getElementById('prev').addEventListener('click', function () { move(-1); });
+  document.getElementById('next').addEventListener('click', function () { move(1); });
+  var store = {};
+  try { store = JSON.parse(localStorage.getItem('todos') || '{}') || {}; } catch (e) { store = {}; }
+  var syncHook = null;
+  var boxIdx = null, boxMv = false, boxEdit = null, logSelSync = null;
+  function touch() { try { localStorage.setItem('syncDirty', '1'); } catch (e) {} if (syncHook) syncHook(); }
+  function save() { try { localStorage.setItem('todos', JSON.stringify(store)); } catch (e) {} touch(); }
+  var repeats = [];
+  try { repeats = JSON.parse(localStorage.getItem('repeats') || '[]') || []; } catch (e) { repeats = []; }
+  function saveR() { try { localStorage.setItem('repeats', JSON.stringify(repeats)); } catch (e) {} touch(); }
+  function dn(x) { return x.getFullYear() * 10000 + (x.getMonth() + 1) * 100 + x.getDate(); }
+  function repsFor(x) {
+    var n = dn(x), w = x.getDay();
+    return repeats.filter(function (r) { return r.days.indexOf(w) >= 0 && n >= r.start && (!r.end || n <= r.end) && !(r.skip && r.skip[n]); });
+  }
+  function prevDn(x) { return dn(new Date(x.getFullYear(), x.getMonth(), x.getDate() - 1)); }
+  function cutFrom(r, n) {
+    // 반복 시리즈를 n일부터 잘라낸다 (n 이전 기록은 유지)
+    if (r.start >= n) { var i = repeats.indexOf(r); if (i >= 0) repeats.splice(i, 1); }
+    else r.end = prevDn(new Date(Math.floor(n / 10000), Math.floor(n / 100) % 100 - 1, n % 100));
+  }
+  function askScope(title, opts, cb) {
+    var box = document.getElementById('sbtn');
+    document.getElementById('stitle').textContent = title;
+    box.innerHTML = '';
+    opts.forEach(function (o) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = o.label;
+      if (o.cls) b.className = o.cls;
+      b.addEventListener('click', function () {
+        document.getElementById('ov5').classList.remove('open');
+        if (o.val) cb(o.val);
+      });
+      box.appendChild(b);
+    });
+    document.getElementById('ov5').classList.add('open');
+  }
+  document.getElementById('ov5').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.getElementById('ov5').classList.remove('open'); });
+  document.getElementById('days').addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button');
+    if (b) b.classList.toggle('on');
+  });
+  function dkey() { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function catOf(t) {
+    var cs = document.querySelectorAll('.cat'), i, nm, col = cc(t.color);
+    for (i = 0; i < cs.length; i++) if (t.cat && cs[i].getAttribute('data-cat') === t.cat) return t.cat;
+    for (i = 0; i < cs.length; i++) if (col && cc(cs[i].querySelector('.dot').style.backgroundColor) === col) return cs[i].getAttribute('data-cat');
+    return '할일';
+  }
+  function renderTodo() {
+    var uls = {};
+    document.querySelectorAll('.cat').forEach(function (c) { var u = c.querySelector('.clist'); u.innerHTML = ''; uls[c.getAttribute('data-cat')] = u; });
+    var list = (store[dkey()] || []).map(function (t, i) { return { t: t, i: i, rep: false }; }).concat(repsFor(d).map(function (r) {
+      return { t: { text: r.text, memo: r.memo, time: r.time, color: r.color, cat: r.cat, done: !!(r.done && r.done[dn(d)]), r: r }, rep: true };
+    }));
+    var dirtyS = false, dirtyR = false;
+    list.forEach(function (it, pos) {
+      var o = it.rep ? it.t.r : it.t;
+      if (!o.id) { o.id = uid(); if (it.rep) dirtyR = true; else dirtyS = true; }
+      it.id = o.id; it.pos = pos;
+    });
+    if (dirtyS) save();
+    if (dirtyR) saveR();
+    var ord = orders[dkey()] || [];
+    list.sort(function (a, b) {
+      var ia = ord.indexOf(a.id), ib = ord.indexOf(b.id);
+      return (ia < 0 ? 1e6 + a.pos : ia) - (ib < 0 ? 1e6 + b.pos : ib);
+    });
+    list = list.filter(function (x) { return !x.t.done; }).concat(list.filter(function (x) { return x.t.done; }));
+    list.forEach(function (it) {
+      var t = it.t, i = it.i;
+      var li = document.createElement('li');
+      li.dataset.id = it.id;
+      attachDrag(li);
+      if (t.done) li.className = 'done';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!t.done;
+      var cl = cc(t.color); if (cl) cb.style.setProperty('--c', cl);
+      cb.addEventListener('change', function () {
+        if (it.rep) { it.t.r.done = it.t.r.done || {}; it.t.r.done[dn(d)] = cb.checked; saveR(); }
+        else { t.done = cb.checked; save(); }
+        if (cb.checked) {
+          var ids = [], byId = {};
+          document.querySelectorAll('.clist li').forEach(function (n) { ids.push(n.dataset.id); });
+          list.forEach(function (x) { byId[x.id] = x; });
+          var from = ids.indexOf(it.id), last = -1;
+          ids.splice(from, 1);
+          ids.forEach(function (id, ix) { if (catOf(byId[id].t) === catOf(t)) last = ix; });
+          ids.splice(last < 0 ? from : last + 1, 0, it.id);
+          orders[dkey()] = ids;
+          saveO();
+        }
+        renderTodo();
+      });
+      var sp = document.createElement('span');
+      var ts = document.createElement('span');
+      ts.className = 'tt';
+      ts.textContent = t.text;
+      sp.appendChild(ts);
+      if (t.time) {
+        var tm = document.createElement('small');
+        tm.textContent = t.time;
+        tm.style.display = 'block';
+        tm.style.opacity = '.6';
+        sp.appendChild(tm);
+      }
+      if (t.memo) {
+        var mm = document.createElement('small');
+        mm.textContent = t.memo;
+        mm.style.display = 'block';
+        mm.style.whiteSpace = 'pre-wrap';
+        mm.style.opacity = '.6';
+        sp.appendChild(mm);
+      }
+      var x = document.createElement('button');
+      x.className = 'del';
+      x.textContent = '×';
+      x.setAttribute('aria-label', '삭제');
+      x.addEventListener('click', function () {
+        if (it.rep) { repeats.splice(repeats.indexOf(it.t.r), 1); saveR(); }
+        else { store[dkey()].splice(i, 1); save(); }
+        renderTodo();
+      });
+      li.appendChild(cb);
+      li.appendChild(sp);
+      li.addEventListener('click', function (e) { if (justDragged) return; if (e.target !== cb) openDetail(it); });
+      uls[catOf(t)].appendChild(li);
+    });
+  }
+  var lg = document.getElementById('logs');
+  for (var hr = 0; hr < 24; hr++) {
+    var row = document.createElement('div');
+    row.className = 'hrow';
+    var hn = document.createElement('span');
+    hn.className = 'hnum';
+    hn.textContent = (hr < 10 ? '0' : '') + hr;
+    var hp = document.createElement('div');
+    hp.className = 'hpill';
+    hp.setAttribute('data-h', hr);
+    var ms = document.createElement('div');
+    ms.className = 'mseg';
+    for (var mn = 0; mn < 60; mn++) {
+      var mc = document.createElement('i');
+      mc.setAttribute('data-m', mn);
+      ms.appendChild(mc);
+    }
+    hp.appendChild(ms);
+    for (var tk = 10; tk < 60; tk += 10) {
+      var tick = document.createElement('b');
+      tick.className = 'tick';
+      tick.style.left = (tk / 60 * 100) + '%';
+      hp.appendChild(tick);
+    }
+    row.appendChild(hn);
+    row.appendChild(hp);
+    lg.appendChild(row);
+  }
+  function paintLog() {
+    var now = new Date(), nd = dn(now), sd = dn(d), nh = now.getHours(), nm = now.getMinutes();
+    document.querySelectorAll('.hpill').forEach(function (p) {
+      var h = +p.getAttribute('data-h');
+      var past = sd < nd || (sd === nd && h < nh), curH = sd === nd && h === nh;
+      p.classList.toggle('future', !past);
+      p.querySelectorAll('.mseg i').forEach(function (s, m) { s.classList.toggle('on', curH && m <= nm); });
+    });
+  }
+  setInterval(paintLog, 30000);
+  function paintT(id) {
+    var el = document.getElementById(id), v = document.getElementById(id.replace('t', 'v')), n = el._fill || 0;
+    var s = (el.value.replace(/\D/g, '') + '0000').slice(0, 4), h = '';
+    for (var i = 0; i < 4; i++) {
+      if (i === 2) h += '<span class="' + (n > 2 ? 'k' : 'g') + '">:</span>';
+      h += '<span class="' + (i < n ? 'k' : 'g') + '">' + s.charAt(i) + '</span>';
+    }
+    v.innerHTML = h;
+  }
+  function fmtT(v) {
+    var p = ('0000' + v.replace(/\D/g, '')).slice(-4), h = Math.min(23, parseInt(p.slice(0, 2), 10)), m = Math.min(59, parseInt(p.slice(2), 10));
+    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+  }
+  function checkTime() {
+    var s = document.getElementById('tstart').value.replace(':', ''), e = document.getElementById('tend').value.replace(':', '');
+    document.getElementById('terr').textContent = (s.length === 4 && e.length === 4 && e < s) ? '종료 시간이 시작 시간보다 빠릅니다.' : '';
+  }
+  ['tstart', 'tend'].forEach(function (id) {
+    var el = document.getElementById(id);
+    el.addEventListener('input', function (e) {
+      var dg = el._dg || [];
+      if (e.inputType && e.inputType.indexOf('delete') === 0) {
+        dg.pop();
+      } else if (e.data) {
+        e.data.replace(/\D/g, '').split('').forEach(function (c) {
+          if (dg.length >= 4) dg = [];
+          dg.push(c);
+        });
+      } else {
+        dg = el.value.replace(/\D/g, '').slice(0, 4).split('');
+      }
+      if (dg.length >= 2 && parseInt(dg[0] + dg[1], 10) > 23) { dg[0] = '2'; dg[1] = '3'; }
+      if (dg.length >= 4 && parseInt(dg[2] + dg[3], 10) > 59) { dg[2] = '5'; dg[3] = '9'; }
+      el._dg = dg;
+      el._fill = dg.length;
+      var s = (dg.join('') + '0000').slice(0, 4);
+      el.value = s.slice(0, 2) + ':' + s.slice(2);
+      paintT(el.id);
+      var cp = dg.length <= 2 ? dg.length : dg.length + 1;
+      el.setSelectionRange(cp, cp);
+      checkTime();
+      if (el.id === 'tstart' && dg.length === 4 && e.data) document.getElementById('tend').focus();
+    });
+    el.addEventListener('focus', function () { el._dg = []; setTimeout(function () { el.setSelectionRange(0, 0); }, 0); });
+    el.addEventListener('click', function () { var n = (el._dg || []).length, p = n <= 2 ? n : n + 1; el.setSelectionRange(p, p); });
+    el.addEventListener('dragstart', function (e) { e.preventDefault(); });
+    el.addEventListener('drop', function (e) { e.preventDefault(); });
+    el.addEventListener('blur', function () {
+      var q = el.value.replace(/\D/g, ''), pad = function (x) { return (x < 10 ? '0' : '') + x; };
+      el.value = pad(Math.min(23, parseInt(q.slice(0, 2), 10) || 0)) + ':' + pad(Math.min(59, parseInt(q.slice(2, 4), 10) || 0));
+      paintT(el.id);
+      checkTime();
+    });
+  });
+  ['memo', 'time', 'rep'].forEach(function (n) {
+    var sw = document.getElementById('sw' + n), f = document.getElementById('f' + n);
+    sw.addEventListener('change', function () { f.classList.toggle('open', sw.checked); });
+  });
+  var cur = null;
+  function openSheet(p) {
+    editing = null;
+    boxEdit = null;
+    document.getElementById('sheet').classList.remove('boxmode');
+    cur = p ? { color: p.querySelector('.dot').style.backgroundColor, name: p.childNodes[1].textContent } : { color: '' };
+    document.getElementById('ttitle').value = '';
+    document.getElementById('tmemo').value = '';
+    ['tstart', 'tend'].forEach(function (id) { var el = document.getElementById(id); el.value = '00:00'; el._dg = []; el._fill = 0; paintT(id); });
+    ['memo', 'time', 'rep'].forEach(function (n) {
+      document.getElementById('sw' + n).checked = false;
+      document.getElementById('f' + n).classList.remove('open');
+    });
+    checkTime();
+    document.querySelectorAll('#days button').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-w') === d.getDay()); });
+    setRend('');
+    document.getElementById('rerr').textContent = '';
+    document.getElementById('overlay').classList.add('open');
+  }
+  function closeSheet() { document.getElementById('overlay').classList.remove('open'); }
+  function commitSave(mode) {
+    var ti = document.getElementById('ttitle'), me = document.getElementById('tmemo');
+    var title = ti.value.trim();
+    var prevDone = false, prevRepDone = {}, prevSkip = {}, prevId, ed = editing, today = dn(d);
+    if (ed) {
+      if (ed.rep) {
+        var old = ed.t.r;
+        prevId = old.id;
+        prevDone = !!(old.done && old.done[today]);
+        if (mode === 'this') {
+          // 이 날짜만 시리즈에서 빼고, 단일 투두로 바꿔 저장
+          old.skip = old.skip || {};
+          old.skip[today] = true;
+        } else {
+          // 이 날짜부터 앞으로: 기존 시리즈는 어제까지로 끊고 새 시리즈를 만든다
+          Object.keys(old.done || {}).forEach(function (k) { if (+k >= today) prevRepDone[k] = old.done[k]; });
+          Object.keys(old.skip || {}).forEach(function (k) { if (+k >= today) prevSkip[k] = true; });
+          cutFrom(old, today);
+        }
+        saveR();
+      } else {
+        var ar = store[dkey()];
+        if (ar && ar[ed.i]) { prevDone = ar[ed.i].done; prevId = ar[ed.i].id; ar.splice(ed.i, 1); }
+      }
+    }
+    var k = dkey();
+    var memoV = document.getElementById('swmemo').checked ? me.value.trim() : '';
+    var timeV = document.getElementById('swtime').checked ? fmtT(document.getElementById('tstart').value) + '-' + fmtT(document.getElementById('tend').value) : '';
+    if (document.getElementById('swrep').checked && mode !== 'this') {
+      var rdays = [], rend = document.getElementById('rend').value;
+      document.querySelectorAll('#days button.on').forEach(function (b) { rdays.push(+b.getAttribute('data-w')); });
+      var rn = rend ? parseInt(rend.replace(/-/g, ''), 10) : 0;
+      repeats.push({ id: prevId, cat: cur ? cur.name : '', text: title, memo: memoV, time: timeV, color: cur ? cur.color : '', days: rdays, start: today, end: rn, done: prevRepDone, skip: prevSkip });
+      saveR();
+    } else
+    (store[k] = store[k] || []).splice(ed && !ed.rep ? ed.i : store[k].length, 0, { id: prevId, cat: cur ? cur.name : '', text: title, memo: memoV, time: timeV, color: cur ? cur.color : '', done: prevDone });
+    ti.value = '';
+    me.value = '';
+    document.getElementById('tstart').value = '00:00';
+    document.getElementById('tend').value = '00:00';
+    checkTime();
+    save();
+    renderTodo();
+    closeSheet();
+  }
+  document.getElementById('tsave').addEventListener('click', function () {
+    var ti = document.getElementById('ttitle');
+    var title = ti.value.trim();
+    if (!title) { ti.focus(); return; }
+    if (boxEdit !== null) {
+      var bb = box[boxEdit];
+      if (bb) { bb.text = title; bb.memo = document.getElementById('swmemo').checked ? document.getElementById('tmemo').value.trim() : ''; }
+      boxEdit = null;
+      ti.value = '';
+      document.getElementById('tmemo').value = '';
+      saveB();
+      renderBox();
+      closeSheet();
+      return;
+    }
+    var ed = editing;
+    if (document.getElementById('swrep').checked) {
+      var rdays = [], rend = document.getElementById('rend').value, err = '';
+      document.querySelectorAll('#days button.on').forEach(function (b) { rdays.push(+b.getAttribute('data-w')); });
+      var rn = rend ? parseInt(rend.replace(/-/g, ''), 10) : 0;
+      if (!rdays.length) err = '반복 요일을 선택하세요.';
+      else if (rn && rn < dn(d)) err = '종료일이 시작일보다 빠릅니다.';
+      document.getElementById('rerr').textContent = err;
+      if (err) return;
+    }
+    if (ed && ed.rep) {
+      askScope('반복 투두를 어떻게 수정할까요?', [
+        { label: '이 투두만 수정', cls: 'pri', val: 'this' },
+        { label: '이 투두와 앞으로의 투두 수정', val: 'following' },
+        { label: '취소' }
+      ], commitSave);
+    } else commitSave(null);
+  });
+  document.getElementById('overlay').addEventListener('click', function (e) { if (e.target === this) closeSheet(); });
+  document.getElementById('sheet').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229) return;
+    var t = e.target, tag = t.tagName;
+    if (tag === 'BUTTON' || t.id === 'rendbtn') return;
+    if (tag === 'TEXTAREA' && !(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    document.getElementById('tsave').click();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+  document.querySelectorAll('.pill').forEach(function (p) {
+    p.addEventListener('click', function (e) {
+      if (e.target.closest('.plus')) { openSheet(p); return; }
+    });
+  });
+  var tabIds = ['tab-todo', 'tab-log', 'tab-set'];
+  function curTab() { return tabIds.filter(function (id) { return !document.getElementById(id).hidden; })[0]; }
+  function switchTab(id, dir) {
+    document.querySelectorAll('nav button').forEach(function (o) { o.classList.toggle('active', o.getAttribute('data-tab') === id); });
+    document.querySelectorAll('.tab').forEach(function (s) {
+      var show = s.id === id;
+      s.hidden = !show;
+    });
+  }
+  document.querySelectorAll('nav button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var id = b.getAttribute('data-tab'), c = curTab();
+      if (id !== c) switchTab(id, tabIds.indexOf(id) > tabIds.indexOf(c) ? 1 : -1);
+    });
+  });
+  (function () {
+    var sx = 0, sy = 0, t0 = 0, ok = false, mode = 0, cur = null, nb = null, W = 1, last = 0;
+    var lsheet = document.getElementById('logsheet');
+    function place(el, x) {
+      el.style.left = x + 'px';
+      if (el.id === 'tab-log') lsheet.style.transform = 'translateX(' + x + 'px)';
+    }
+    function reset() {
+      tabIds.forEach(function (id) {
+        var el = document.getElementById(id);
+        el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.width = '';
+      });
+      lsheet.style.transform = '';
+    }
+    document.addEventListener('touchstart', function (e) {
+      var t = e.target;
+      ok = e.touches.length === 1 && !document.getElementById('overlay').classList.contains('open') &&
+        !(t.closest && t.closest('input, textarea, #logsheet'));
+      mode = 0;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; t0 = Date.now();
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (!ok || dragging) return;
+      var t = e.touches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (mode === 0) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          mode = 1;
+          cur = document.getElementById(curTab());
+          W = cur.offsetWidth || window.innerWidth;
+          cur.style.position = 'relative';
+        } else { mode = 2; return; }
+      }
+      if (mode !== 1) return;
+      last = dx;
+      var i = tabIds.indexOf(cur.id), n = i + (dx < 0 ? 1 : -1), ex = nb;
+      nb = (n >= 0 && n < tabIds.length) ? document.getElementById(tabIds[n]) : null;
+      if (ex && ex !== nb) { ex.hidden = true; ex.style.position = ''; ex.style.left = ''; ex.style.top = ''; ex.style.width = ''; if (ex.id === 'tab-log') lsheet.style.transform = ''; }
+      if (nb) {
+        if (nb.hidden) {
+          nb.hidden = false;
+          nb.style.position = 'absolute';
+          nb.style.top = (cur.getBoundingClientRect().top + window.scrollY) + 'px';
+          nb.style.width = '100%';
+        }
+        place(cur, dx);
+        place(nb, dx + (dx < 0 ? W : -W));
+      } else {
+        place(cur, dx * 0.3);
+      }
+    }, { passive: true });
+    function finish() {
+      if (!ok) return;
+      ok = false;
+      if (mode !== 1) return;
+      var go = nb && (Math.abs(last) > W * 0.25 || (Math.abs(last) > 50 && Date.now() - t0 < 300));
+      var target = go ? nb.id : cur.id;
+      if (nb && !go) nb.hidden = true;
+      reset();
+      switchTab(target, 0);
+      nb = null; cur = null; mode = 0;
+    }
+    document.addEventListener('touchend', finish, { passive: true });
+    document.addEventListener('touchcancel', finish, { passive: true });
+  })();
+  (function () {
+    var sh = document.getElementById('logsheet'), g = document.getElementById('lgrab'), tab = document.getElementById('tab-log');
+    var startY = 0, startH = 0, drag = false;
+    function setH(h) {
+      h = Math.max(80, Math.min(window.innerHeight * 0.8, h));
+      sh.style.height = h + 'px';
+      tab.style.paddingBottom = (h + 120) + 'px';
+    }
+    g.addEventListener('pointerdown', function (e) { drag = true; startY = e.clientY; startH = sh.offsetHeight; g.setPointerCapture(e.pointerId); });
+    g.addEventListener('pointermove', function (e) { if (drag) setH(startH + (startY - e.clientY)); });
+    function end() { drag = false; }
+    g.addEventListener('pointerup', end);
+    g.addEventListener('pointercancel', end);
+    setH(220);
+  })();
+  var rcalM = new Date();
+  function p2(x) { return (x < 10 ? '0' : '') + x; }
+  function setRend(v) {
+    document.getElementById('rend').value = v;
+    document.getElementById('rendbtn').textContent = v ? v.replace(/-/g, '/') : '종료일 없음';
+    document.getElementById('rendbtn').classList.toggle('on', !v);
+    document.getElementById('rcal').hidden = true;
+  }
+  function renderRcal() {
+    var y = rcalM.getFullYear(), m = rcalM.getMonth(), first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+    var sel = document.getElementById('rend').value, min = dn(d);
+    var h = '<div class="rh"><button type="button" data-m="-1">‹</button><span>' + y + '/' + p2(m + 1) + '</span><button type="button" data-m="1">›</button></div><table><tr>';
+    ['일', '월', '화', '수', '목', '금', '토'].forEach(function (w, i) {
+      h += '<th' + (i === 0 ? ' class="sun"' : i === 6 ? ' class="sat"' : '') + '>' + w + '</th>';
+    });
+    h += '</tr><tr>';
+    for (var i = 0; i < first; i++) h += '<td></td>';
+    for (var n = 1; n <= days; n++) {
+      var wd = (first + n - 1) % 7, v = y + '-' + p2(m + 1) + '-' + p2(n), dis = (y * 10000 + (m + 1) * 100 + n) < min, cls = [];
+      if (wd === 0) cls.push('sun');
+      if (wd === 6) cls.push('sat');
+      if (dis) cls.push('dis');
+      if (v === sel) cls.push('sel');
+      h += '<td class="' + cls.join(' ') + '"' + (dis ? '' : ' data-v="' + v + '"') + '><span>' + n + '</span></td>';
+      if (wd === 6 && n < days) h += '</tr><tr>';
+    }
+    h += '</tr></table><button type="button" class="rclr' + (sel ? '' : ' on') + '" data-clr="1">종료일 없음</button>';
+    document.getElementById('rcal').innerHTML = h;
+  }
+  document.getElementById('rendbtn').addEventListener('click', function () {
+    var r = document.getElementById('rcal');
+    if (r.hidden) {
+      var v = document.getElementById('rend').value;
+      rcalM = v ? new Date(parseInt(v.slice(0, 4), 10), parseInt(v.slice(5, 7), 10) - 1, 1) : new Date(d.getFullYear(), d.getMonth(), 1);
+      renderRcal();
+      r.hidden = false;
+    } else { r.hidden = true; }
+  });
+  document.getElementById('rcal').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (b && b.hasAttribute('data-m')) { rcalM = new Date(rcalM.getFullYear(), rcalM.getMonth() + parseInt(b.getAttribute('data-m'), 10), 1); renderRcal(); return; }
+    if (b && b.hasAttribute('data-clr')) { setRend(''); return; }
+    var c = e.target.closest('td'), v = c && c.getAttribute('data-v');
+    if (v) setRend(v);
+  });
+  var mvM = new Date(), mvSel = new Date();
+  function renderMv() {
+    var y = mvM.getFullYear(), m = mvM.getMonth(), first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate(), today = new Date();
+    var h = '<div class="rh"><button type="button" data-m="-1">‹</button><span>' + y + '/' + p2(m + 1) + '</span><button type="button" data-m="1">›</button></div><table><tr>';
+    ['일', '월', '화', '수', '목', '금', '토'].forEach(function (w, i) {
+      h += '<th' + (i === 0 ? ' class="sun"' : i === 6 ? ' class="sat"' : '') + '>' + w + '</th>';
+    });
+    h += '</tr><tr>';
+    for (var i = 0; i < first; i++) h += '<td></td>';
+    for (var n = 1; n <= days; n++) {
+      var wd = (first + n - 1) % 7, cls = [], num = y * 10000 + (m + 1) * 100 + n;
+      if (wd === 0) cls.push('sun');
+      if (wd === 6) cls.push('sat');
+      if (num === dn(today)) cls.push('today');
+      if (num === dn(mvSel)) cls.push('sel');
+      h += '<td class="' + cls.join(' ') + '" data-n="' + n + '"><span>' + n + '</span></td>';
+      if (wd === 6 && n < days) h += '</tr><tr>';
+    }
+    document.getElementById('mvcal').innerHTML = h + '</tr></table>';
+  }
+  function closeMv() { document.getElementById('ov4').classList.remove('open'); boxMv = false; }
+  document.getElementById('tmove').addEventListener('click', function () {
+    if (!curItem || curItem.rep) return;
+    closeDetail();
+    mvSel = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    mvM = new Date(d.getFullYear(), d.getMonth(), 1);
+    renderMv();
+    document.getElementById('ov4').classList.add('open');
+  });
+  document.getElementById('mvcal').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (b && b.hasAttribute('data-m')) { mvM = new Date(mvM.getFullYear(), mvM.getMonth() + parseInt(b.getAttribute('data-m'), 10), 1); renderMv(); return; }
+    var c = e.target.closest('td'), n = c && c.getAttribute('data-n');
+    if (!n) return;
+    mvSel = new Date(mvM.getFullYear(), mvM.getMonth(), parseInt(n, 10));
+    renderMv();
+  });
+  document.getElementById('mvgo').addEventListener('click', function () {
+    if (boxMv) {
+      var bi = boxIdx, bd = mvSel;
+      closeMv();
+      boxIdx = null;
+      if (bi !== null) moveBoxTo(bi, bd);
+      return;
+    }
+    if (!curItem || curItem.rep) return;
+    var nd = mvSel;
+    if (dn(nd) !== dn(d)) {
+      var arr = store[dkey()], it = arr && arr.splice(curItem.i, 1)[0];
+      if (it) {
+        var nk = nd.getFullYear() + '-' + (nd.getMonth() + 1) + '-' + nd.getDate();
+        (store[nk] = store[nk] || []).push(it);
+        save();
+        d = nd;
+      }
+    }
+    curItem = null;
+    closeMv();
+    render();
+  });
+  document.getElementById('ov4').addEventListener('click', function (e) { if (e.target === this) closeMv(); });
+  document.getElementById('grab4').addEventListener('click', closeMv);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMv(); });
+  var dragging = false, justDragged = false, dragLi = null, dragY0 = 0;
+  var orders = {};
+  try { orders = JSON.parse(localStorage.getItem('orders') || '{}') || {}; } catch (e) { orders = {}; }
+  function saveO() { try { localStorage.setItem('orders', JSON.stringify(orders)); } catch (e) {} touch(); }
+  function cc(c) { var m = /^(rgba?\([^)]*\)|#[0-9a-fA-F]{3,8})/.exec(c || ''); return m ? m[1] : ''; }
+  function uid() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function attachDrag(li) {
+    var tmr = null, x0 = 0, y0 = 0, lastY = 0, raf = 0;
+    function stop() {
+      clearTimeout(tmr);
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      if (!dragLi) return;
+      document.documentElement.classList.remove('dragging');
+      dragLi.classList.remove('drag');
+      dragLi.style.transform = '';
+      var ids = [];
+      document.querySelectorAll('.clist li').forEach(function (n) { ids.push(n.dataset.id); });
+      orders[dkey()] = ids;
+      saveO();
+      dragLi = null; dragging = false; justDragged = true;
+      setTimeout(function () { justDragged = false; }, 400);
+    }
+    li.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1 || e.target.tagName === 'INPUT') return;
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+      clearTimeout(tmr);
+      tmr = setTimeout(function () {
+        dragLi = li; dragging = true; dragY0 = y0;
+        li.classList.add('drag');
+        document.documentElement.classList.add('dragging');
+        if (navigator.vibrate) { try { navigator.vibrate(10); } catch (er) {} }
+      }, 400);
+    }, { passive: true });
+    li.addEventListener('touchmove', function (e) {
+      var t = e.touches[0];
+      if (dragLi !== li) {
+        if (Math.abs(t.clientX - x0) > 8 || Math.abs(t.clientY - y0) > 8) clearTimeout(tmr);
+        return;
+      }
+      e.preventDefault();
+      lastY = t.clientY;
+      if (!raf) raf = requestAnimationFrame(function () { raf = 0; if (dragLi === li) step(); });
+    }, { passive: false });
+    function step() {
+      li.style.transform = 'translateY(' + (lastY - dragY0) + 'px)';
+      var guard = 0, moved = true;
+      while (moved && guard++ < 10) {
+        moved = false;
+        var r = li.getBoundingClientRect(), c = r.top + r.height / 2, nx = li.nextElementSibling, pv = li.previousElementSibling;
+        if (nx && nx.classList.contains('done') === li.classList.contains('done')) {
+          var nr = nx.getBoundingClientRect();
+          if (c > nr.top + nr.height / 2) { li.parentNode.insertBefore(li, nx.nextSibling); dragY0 += nr.height; moved = true; }
+        }
+        if (!moved && pv && pv.classList.contains('done') === li.classList.contains('done')) {
+          var pr = pv.getBoundingClientRect();
+          if (c < pr.top + pr.height / 2) { li.parentNode.insertBefore(li, pv); dragY0 -= pr.height; moved = true; }
+        }
+        if (moved) li.style.transform = 'translateY(' + (lastY - dragY0) + 'px)';
+      }
+    }
+    li.addEventListener('touchend', stop);
+    li.addEventListener('touchcancel', stop);
+    li.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+  var editing = null;
+  function openEdit(it) {
+    var t = it.t;
+    openSheet(null);
+    editing = it;
+    cur.color = t.color || '';
+    cur.name = catOf(t);
+    document.getElementById('ttitle').value = t.text;
+    if (t.memo) {
+      document.getElementById('swmemo').checked = true;
+      document.getElementById('fmemo').classList.add('open');
+      document.getElementById('tmemo').value = t.memo;
+    }
+    if (t.time) {
+      var pr = t.time.split('-');
+      [['tstart', pr[0]], ['tend', pr[1]]].forEach(function (a) {
+        var el = document.getElementById(a[0]);
+        el.value = a[1]; el._dg = a[1].replace(/\D/g, '').split(''); el._fill = 4; paintT(a[0]);
+      });
+      document.getElementById('swtime').checked = true;
+      document.getElementById('ftime').classList.add('open');
+      checkTime();
+    }
+    if (it.rep) {
+      var r = t.r, e = r.end ? String(r.end) : '';
+      document.getElementById('swrep').checked = true;
+      document.getElementById('frep').classList.add('open');
+      document.querySelectorAll('#days button').forEach(function (b) { b.classList.toggle('on', r.days.indexOf(parseInt(b.getAttribute('data-w'), 10)) >= 0); });
+      setRend(e ? e.slice(0, 4) + '-' + e.slice(4, 6) + '-' + e.slice(6) : '');
+    }
+  }
+  document.getElementById('tedit').addEventListener('click', function () {
+    if (!curItem) return;
+    closeDetail();
+    openEdit(curItem);
+  });
+  var curItem = null;
+  function openDetail(it) { curItem = it; document.getElementById('tmove').hidden = !!(it && it.rep); document.getElementById('tbox').hidden = !!(it && it.rep); document.getElementById('ov2').classList.add('open'); }
+  function closeConfirm() { document.getElementById('ov3').classList.remove('open'); }
+  document.getElementById('tdel').addEventListener('click', function () {
+    if (curItem && curItem.rep) {
+      var item = curItem;
+      askScope('반복 투두를 어떻게 삭제할까요?', [
+        { label: '이 투두만 삭제', cls: 'dng', val: 'this' },
+        { label: '이 투두와 앞으로의 투두 삭제', cls: 'dng', val: 'following' },
+        { label: '취소' }
+      ], function (mode) {
+        var r = item.t.r, n = dn(d);
+        if (mode === 'this') { r.skip = r.skip || {}; r.skip[n] = true; }
+        else cutFrom(r, n);
+        saveR();
+        curItem = null;
+        closeDetail();
+        renderTodo();
+      });
+      return;
+    }
+    document.getElementById('dmsg').textContent = '';
+    document.getElementById('ov3').classList.add('open');
+  });
+  document.getElementById('dno').addEventListener('click', closeConfirm);
+  document.getElementById('ov3').addEventListener('click', function (e) { if (e.target === this) closeConfirm(); });
+  document.getElementById('dyes').addEventListener('click', function () {
+    if (curItem) {
+      if (curItem.rep) {
+        var ix = repeats.indexOf(curItem.t.r);
+        if (ix >= 0) repeats.splice(ix, 1);
+        saveR();
+      } else {
+        var arr = store[dkey()];
+        if (arr) arr.splice(curItem.i, 1);
+        save();
+      }
+    }
+    curItem = null;
+    closeConfirm();
+    closeDetail();
+    renderTodo();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeConfirm(); });
+  function closeDetail() { document.getElementById('ov2').classList.remove('open'); }
+  document.getElementById('ov2').addEventListener('click', function (e) { if (e.target === this) closeDetail(); });
+  document.getElementById('grab2').addEventListener('click', closeDetail);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDetail(); });
+  (function () {
+    var btn = document.getElementById('syncbtn'), msg = document.getElementById('syncmsg'), sw = document.getElementById('swsync');
+    var urlEl = document.getElementById('syncurl');
+    if (!btn || !msg || !sw || !urlEl) return;
+    var busy = false, timer = null;
+    function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {} return null; }
+    function say(t) { msg.textContent = t; }
+    function stamp(ts) { return new Date(ts).toLocaleString('ko-KR'); }
+    function ready() { return /^https:\/\/script\.google\.com\/.+\/exec$/.test(ls('syncUrl') || ''); }
+    function isEmpty() {
+      var n = 0;
+      Object.keys(store).forEach(function (k) { n += (store[k] || []).length; });
+      return !n && !repeats.length && !box.length;
+    }
+    urlEl.value = ls('syncUrl') || '';
+    function saveCfg() {
+      var u = urlEl.value.trim();
+      if (u !== (ls('syncUrl') || '')) { ls('syncBase', '0'); ls('syncDirty', '1'); }
+      ls('syncUrl', u);
+    }
+    urlEl.addEventListener('change', saveCfg);
+    async function call(body) {
+      var res = await fetch(ls('syncUrl'), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+      var j = await res.json();
+      if (!j || !j.ok) throw new Error((j && j.error) || 'error');
+      return j;
+    }
+    async function push() {
+      var p = { todos: store, repeats: repeats, orders: orders, box: box, logcats: window.__log ? window.__log.get() : {} }, at = Date.now();
+      ls('syncDirty', '0');
+      try { await call({ action: 'set', data: p, updatedAt: at }); } catch (e) { ls('syncDirty', '1'); throw e; }
+      ls('syncBase', String(at));
+      say('마지막 동기화: ' + stamp(at));
+    }
+    function pull(r) {
+      var x = r.data || {};
+      store = x.todos || {}; repeats = x.repeats || []; orders = x.orders || {}; box = x.box || [];
+      if (window.__log) window.__log.set(x.logcats || {});
+      ls('box', JSON.stringify(box)); renderBox();
+      ls('todos', JSON.stringify(store)); ls('repeats', JSON.stringify(repeats)); ls('orders', JSON.stringify(orders));
+      ls('syncBase', String(r.updatedAt)); ls('syncDirty', '0');
+      render();
+      say('시트에서 가져왔어요. (' + stamp(r.updatedAt) + ')');
+    }
+    function fail(e) {
+      say('동기화에 실패했어요. URL·배포 설정(액세스: 모든 사용자)을 확인해 주세요.');
+    }
+    async function sync() {
+      if (busy) return;
+      if (!ready()) { say('웹 앱 URL(…/exec)을 입력해 주세요.'); return; }
+      saveCfg();
+      busy = true; btn.disabled = true; say('동기화 중…');
+      var conflict = null;
+      try {
+        var r = await call({ action: 'get' });
+        if (!r.exists) r = null;
+        var base = +ls('syncBase') || 0, dirty = ls('syncDirty') === '1';
+        if (!r) await push();
+        else if (r.updatedAt === base) {
+          if (dirty) await push(); else say('이미 최신이에요. (' + stamp(base) + ')');
+        }
+        else if (base && !dirty) pull(r);
+        else if (!base && isEmpty()) pull(r);
+        else conflict = r;
+      } catch (e) { fail(e); }
+      busy = false; btn.disabled = false;
+      if (conflict) {
+        say('이 기기와 시트의 내용이 서로 달라요.');
+        askScope('어느 쪽 데이터를 사용할까요?', [
+          { label: '이 기기 데이터를 시트에 저장', cls: 'pri', val: 'push' },
+          { label: '시트 데이터로 바꾸기', val: 'pull' },
+          { label: '취소' }
+        ], async function (v) {
+          try { if (v === 'push') await push(); else pull(conflict); } catch (e) { fail(e); }
+        });
+      }
+    }
+    syncHook = function () {
+      if (!ready() || !sw.checked) return;
+      clearTimeout(timer);
+      timer = setTimeout(sync, 3000);
+    };
+    btn.addEventListener('click', sync);
+    sw.addEventListener('change', function () { ls('autoSync', sw.checked ? '1' : '0'); if (sw.checked) sync(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && sw.checked) sync(); });
+    var b0 = +ls('syncBase') || 0;
+    if (!ready()) say('웹 앱 URL(…/exec)을 입력해 주세요.');
+    else if (b0) say('마지막 동기화: ' + stamp(b0));
+    if (ls('autoSync') === '1') { sw.checked = true; if (ready()) sync(); }
+  })();
+  (function () {
+    var list = document.getElementById('setlist'), back = document.getElementById('setback'), title = document.getElementById('settitle');
+    var names = { 'sv-vault': '보관함', 'sv-sync': '동기화' };
+    function show(id) {
+      list.hidden = !!id;
+      Object.keys(names).forEach(function (k) { document.getElementById(k).hidden = k !== id; });
+      back.hidden = !id;
+      title.textContent = id ? names[id] : '설정';
+    }
+    document.querySelectorAll('.srow').forEach(function (r) { r.addEventListener('click', function () { show(r.getAttribute('data-sv')); }); });
+    back.addEventListener('click', function () { show(null); });
+  })();
+  var box = [];
+  try { box = JSON.parse(localStorage.getItem('box') || '[]') || []; } catch (e) { box = []; }
+  function saveB() { try { localStorage.setItem('box', JSON.stringify(box)); } catch (e) {} touch(); }
+  function renderBox() {
+    var el = document.getElementById('sv-vault');
+    el.innerHTML = '';
+    box.forEach(function (b, i) {
+      var row = document.createElement('div');
+      row.className = 'brow';
+      var dot = document.createElement('i');
+      dot.className = 'dot';
+      if (b.color) dot.style.background = b.color;
+      var tx = document.createElement('div');
+      tx.className = 'bt';
+      tx.textContent = b.text;
+      if (b.memo) {
+        var mm = document.createElement('small');
+        mm.textContent = b.memo;
+        tx.appendChild(mm);
+      }
+      row.addEventListener('click', function () { boxIdx = i; document.getElementById('ov6').classList.add('open'); });
+      row.appendChild(dot);
+      row.appendChild(tx);
+      el.appendChild(row);
+    });
+  }
+  document.getElementById('tbox').addEventListener('click', function () {
+    if (!curItem || curItem.rep) return;
+    var arr = store[dkey()], t = curItem.t;
+    if (!arr || !arr[curItem.i]) return;
+    box.push({ id: t.id, cat: t.cat || '', text: t.text, memo: t.memo || '', color: t.color || '' });
+    arr.splice(curItem.i, 1);
+    save();
+    saveB();
+    curItem = null;
+    closeDetail();
+    renderTodo();
+    renderBox();
+  });
+  function closeBoxMenu() { document.getElementById('ov6').classList.remove('open'); }
+  document.getElementById('ov6').addEventListener('click', function (e) { if (e.target === this) closeBoxMenu(); });
+  document.getElementById('grab6').addEventListener('click', closeBoxMenu);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeBoxMenu(); });
+  function moveBoxTo(i, nd) {
+    var b = box[i];
+    if (!b) return;
+    var nk = nd.getFullYear() + '-' + (nd.getMonth() + 1) + '-' + nd.getDate();
+    (store[nk] = store[nk] || []).push({ id: b.id, cat: b.cat || '', text: b.text, memo: b.memo || '', time: '', color: b.color || '', done: false });
+    box.splice(i, 1);
+    save();
+    saveB();
+    d = nd;
+    render();
+    renderBox();
+  }
+  document.getElementById('bt-today').addEventListener('click', function () {
+    var i = boxIdx;
+    closeBoxMenu();
+    boxIdx = null;
+    if (i !== null) moveBoxTo(i, new Date());
+  });
+  document.getElementById('bt-date').addEventListener('click', function () {
+    if (boxIdx === null) return;
+    closeBoxMenu();
+    boxMv = true;
+    var t0 = new Date();
+    mvSel = new Date(t0.getFullYear(), t0.getMonth(), t0.getDate());
+    mvM = new Date(t0.getFullYear(), t0.getMonth(), 1);
+    renderMv();
+    document.getElementById('ov4').classList.add('open');
+  });
+  document.getElementById('bt-edit').addEventListener('click', function () {
+    var b = box[boxIdx];
+    closeBoxMenu();
+    if (!b) return;
+    var i = boxIdx;
+    openSheet(null);
+    boxEdit = i;
+    cur.color = b.color || '';
+    cur.name = b.cat || '';
+    document.getElementById('sheet').classList.add('boxmode');
+    document.getElementById('ttitle').value = b.text;
+    if (b.memo) {
+      document.getElementById('swmemo').checked = true;
+      document.getElementById('fmemo').classList.add('open');
+      document.getElementById('tmemo').value = b.memo;
+    }
+  });
+  document.getElementById('bt-del').addEventListener('click', function () {
+    var i = boxIdx;
+    closeBoxMenu();
+    if (i === null) return;
+    askScope('보관함에서 삭제할까요?', [
+      { label: '삭제', cls: 'dng', val: 'del' },
+      { label: '취소' }
+    ], function () { box.splice(i, 1); boxIdx = null; saveB(); renderBox(); });
+  });
+  (function () {
+    var logs = document.getElementById('logs'), sheet = document.getElementById('logsheet');
+    var segs = Array.prototype.slice.call(logs.querySelectorAll('.mseg i'));
+    var pills = Array.prototype.slice.call(logs.querySelectorAll('.hpill'));
+    var label = document.createElement('div');
+    label.id = 'logsel';
+    sheet.appendChild(label);
+    var catBox = document.createElement('div');
+    catBox.id = 'logcats';
+    catBox.hidden = true;
+    sheet.appendChild(catBox);
+    var logCat = null, catColor = {}, logData = {};
+    try { logData = JSON.parse(localStorage.getItem('logcats') || '{}') || {}; } catch (e) { logData = {}; }
+    window.__log = { get: function () { return logData; }, set: function (v) { logData = v || {}; try { localStorage.setItem('logcats', JSON.stringify(logData)); } catch (e) {} } };
+    function assign(name) {
+      if (lo < 0) return;
+      var k = String(selDate), day = logData[k] || (logData[k] = {});
+      for (var m = lo; m <= hi; m++) { if (name) day[m] = name; else delete day[m]; }
+      if (!Object.keys(day).length) delete logData[k];
+      try { localStorage.setItem('logcats', JSON.stringify(logData)); } catch (e) {}
+      touch();
+      clear();
+    }
+    var lcats = [];
+    document.querySelectorAll('#tab-todo .cat').forEach(function (c) {
+      var dot = c.querySelector('.dot');
+      lcats.push({ n: c.getAttribute('data-cat'), c: dot ? dot.style.background : '#888' });
+    });
+    lcats.push({ n: '잠', c: '#555555' }, { n: '준비', c: '#9C2F75' }, { n: '운동', c: '#5E9A6E' }, { n: '식사', c: '#7A5238' });
+    lcats.forEach(function (c) {
+      var name = c.n;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'lcat';
+      btn.setAttribute('data-c', name);
+      var i = document.createElement('i');
+      i.className = 'dot';
+      i.style.background = c.c;
+      btn.appendChild(i);
+      btn.appendChild(document.createTextNode(name));
+      catColor[name] = c.c;
+      btn.addEventListener('click', function () { assign(name); });
+      catBox.appendChild(btn);
+    });
+    var xb = document.createElement('button');
+    xb.type = 'button';
+    xb.className = 'lcat';
+    xb.textContent = '지우기';
+    xb.addEventListener('click', function () { assign(null); });
+    catBox.appendChild(xb);
+    function paintCat() {
+      catBox.querySelectorAll('.lcat').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-c') === logCat); });
+    }
+    var anchor = 0, lo = -1, hi = -1, selDate = 0, active = false, timer = null, sx = 0, sy = 0, lastTouch = 0, mdown = false, moved = false;
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function fmt(v) { return pad(Math.floor(v / 60) % 24) + ':' + pad(v % 60); }
+    function valAt(x, y) {
+      var best = pills[0], bd = 1e9;
+      pills.forEach(function (p) {
+        var r = p.getBoundingClientRect(), dy = y < r.top ? r.top - y : (y > r.bottom ? y - r.bottom : 0);
+        if (dy < bd) { bd = dy; best = p; }
+      });
+      var r = best.getBoundingClientRect();
+      var m = Math.max(0, Math.min(59, Math.floor((x - r.left) / r.width * 60)));
+      return (+best.getAttribute('data-h')) * 60 + m;
+    }
+    function paint() {
+      var day = logData[dn(d)] || {};
+      segs.forEach(function (s, i) {
+        var on = lo >= 0 && i >= lo && i <= hi, c = catColor[day[i]];
+        s.classList.toggle('sel', on);
+        s.style.background = (!on && c) ? c : '';
+      });
+      catBox.hidden = lo < 0;
+      if (lo < 0) { label.textContent = ''; logCat = null; paintCat(); return; }
+      var len = hi - lo + 1, h = Math.floor(len / 60), m = len % 60;
+      label.textContent = fmt(lo) + ' - ' + fmt(hi + 1) + ' (' + ((h ? h + '시간 ' : '') + (m ? m + '분' : '')).trim() + ')';
+    }
+    function clear() { lo = hi = -1; paint(); }
+    function begin(x, y) { anchor = valAt(x, y); lo = hi = anchor; selDate = dn(d); active = true; dragging = true; paint(); }
+    function move(x, y) { var v = valAt(x, y); lo = Math.min(anchor, v); hi = Math.max(anchor, v); paint(); }
+    function end() { active = false; dragging = false; }
+    logSelSync = function () { if (lo >= 0 && selDate !== dn(d)) clear(); else paint(); };
+    logs.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    logs.addEventListener('touchstart', function (e) {
+      lastTouch = Date.now();
+      clearTimeout(timer); timer = null;
+      if (e.touches.length !== 1) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+      timer = setTimeout(function () {
+        timer = null;
+        begin(sx, sy);
+        try { if (navigator.vibrate) navigator.vibrate(10); } catch (x) {}
+      }, 250);
+    }, { passive: true });
+    logs.addEventListener('touchmove', function (e) {
+      lastTouch = Date.now();
+      var t = e.touches[0];
+      if (active) { e.preventDefault(); move(t.clientX, t.clientY); return; }
+      if (timer && (Math.abs(t.clientX - sx) > 8 || Math.abs(t.clientY - sy) > 8)) { clearTimeout(timer); timer = null; }
+    }, { passive: false });
+    logs.addEventListener('touchend', function () {
+      lastTouch = Date.now();
+      if (timer) { clearTimeout(timer); timer = null; clear(); }
+      end();
+    });
+    logs.addEventListener('touchcancel', function () { clearTimeout(timer); timer = null; end(); });
+    logs.addEventListener('mousedown', function (e) {
+      if (Date.now() - lastTouch < 600 || e.button !== 0) return;
+      mdown = true; moved = false;
+      begin(e.clientX, e.clientY);
+    });
+    document.addEventListener('mousemove', function (e) { if (!mdown) return; moved = true; move(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', function () {
+      if (!mdown) return;
+      mdown = false;
+      if (!moved) clear();
+      end();
+    });
+  })();
+  renderBox();
+  paintT('tstart');
+  paintT('tend');
+  render();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
